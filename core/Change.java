@@ -1,3 +1,5 @@
+package core;
+
 public class Change{
     public String pathOfModification;
     public String fieldName;

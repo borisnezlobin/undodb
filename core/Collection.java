@@ -1,3 +1,5 @@
+package core;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
@@ -5,6 +7,12 @@ import java.util.Objects;
 public class Collection {
     public ArrayList<Document> docs;
     public String collectionName;
+
+    public Collection(Document doc, String name){
+        this.docs = new ArrayList<>();
+        this.docs.add(doc);
+        this.collectionName = name;
+    }
 
     public Collection(ArrayList<Document> docs, String name){
         this.docs = docs;
