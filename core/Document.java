@@ -1,4 +1,4 @@
-import jdk.jshell.spi.ExecutionControl;
+package core;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,6 +41,14 @@ public class Document {
                         data
                 );
             }
+        }
+        if(path.length == 2){
+            Document doc = new Document(dataType, path[1], data);
+            childrenCollections.add(new Collection(
+                    doc,
+                    path[0]
+            ));
+            return doc;
         }
         return null;
     }

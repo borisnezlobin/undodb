@@ -1,3 +1,5 @@
+package core;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,18 +36,19 @@ public class Database {
                 );
             }
         }
+        if(paths.length != 2){
+            throw new IllegalArgumentException(
+                    "Creating document at '" + path + "' failed: invalid path. Make sure that:\n"
+                    + "1. Your path points to a document\n"
+                    + "2. Your path points to a first-level document (there should only be one '/' in your path)"
+            );
+        }
         Collection collection = createCollection(paths[0]);
-        Document doc = collection.createDocument(
+        return collection.createDocument(
                 dataClass,
                 Arrays.copyOfRange(paths, 1, paths.length),
                 data
         );
-        if(doc == null){
-            throw new IllegalArgumentException(
-                    "Creating document at '" + path + "' failed: Collection '" + collection.collectionName + "' did not have document '" + paths[1] + "'"
-            );
-        }
-        return doc;
     }
 
     public Collection createCollection(String name){
@@ -54,17 +57,39 @@ public class Database {
         return newCollection;
     }
 
+    public void updateDoc(Update update){
+        Document doc = getDocumentAtPath(update.path);
+        if(doc == null){
+            createDocument(
+                    update.newValue.getClass(),
+                    update.path,
+                    update.newValue
+            );
+            return;
+        }
+        try{
+            Change[] changes = update.toChanges(doc, update.path);
+            Transaction t = new Transaction(changes);
+            executeTransaction(t);
+        }catch(IllegalAccessException e){
+            throw new IllegalArgumentException("Unable to access a field in document at '" + update.path + "': " + e.getMessage());
+        }
+    }
+
     public void executeTransaction(Transaction t){
         for(Change change : t.changes){
             executeChange(change);
         }
+        try{
+            transactions.get(transactions.size() - 1).nextHash = t.hash;
+        }catch(IndexOutOfBoundsException ignored){}
         transactions.add(t);
     }
 
     private void executeChange(Change change){
         Document changeTarget = getDocumentAtPath(change.pathOfModification);
         if(changeTarget == null){
-            throw new NullPointerException("Document at " + change.pathOfModification + " does not exist!");
+            throw new NullPointerException("core.Document at " + change.pathOfModification + " does not exist!");
         }
         try{
             Field changeField = changeTarget.data.getClass().getField(change.fieldName);
